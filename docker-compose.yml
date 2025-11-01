@@ -1,0 +1,9 @@
+version: "3"
+services:
+  kmp:
+    build: .
+    container_name: focus_tune_kmp_env
+    volumes:
+      - .:/workspace
+    tty: true
+
