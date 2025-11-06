@@ -3,47 +3,46 @@ package com.shutypy.focustune
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class TimerViewModel : ViewModel() {
 
-    var secondsLeft: Int = 25 * 60
-        private set
+    private val _state = MutableStateFlow(
+        TimerState(secondsLeft = 25 * 60, isRunning = false, totalSeconds = 25 * 60)
+    )
+    val state = _state.asStateFlow()
 
-    var isRunning: Boolean = false
-        private set
-
-    var initialSeconds: Int = 25 * 60
-        private set
-
-    // 画面へ通知するための StateFlow に変更予定だがまずは簡単に
     fun start() {
-        if (isRunning) return
-        isRunning = true
+        if (_state.value.isRunning) return
+        _state.value = _state.value.copy(isRunning = true)
 
         viewModelScope.launch {
-            while (isRunning && secondsLeft > 0) {
+            while (_state.value.isRunning && _state.value.secondsLeft > 0) {
                 delay(1000)
-                secondsLeft--
+                _state.value = _state.value.copy(secondsLeft = _state.value.secondsLeft - 1)
             }
-            if (secondsLeft == 0) {
-                isRunning = false
-                // UI側で onFinished 動かす
+
+            if (_state.value.secondsLeft == 0) {
+                _state.value = _state.value.copy(isRunning = false)
             }
         }
     }
 
     fun pause() {
-        isRunning = false
+        _state.value = _state.value.copy(isRunning = false)
     }
 
     fun reset() {
-        isRunning = false
-        secondsLeft = initialSeconds
+        _state.value = _state.value.copy(
+            secondsLeft = _state.value.totalSeconds,
+            isRunning = false
+        )
     }
 
-    fun setTimer(totalMinutes: Int) {
-        initialSeconds = totalMinutes * 60
-        reset()
+    fun setTimer(minutes: Int) {
+        val total = minutes * 60
+        _state.value = TimerState(total, false, total)
     }
 }

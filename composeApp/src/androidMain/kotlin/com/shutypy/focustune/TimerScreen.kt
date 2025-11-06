@@ -1,23 +1,35 @@
 package com.shutypy.focustune
 
+import android.media.MediaPlayer
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.delay
 
 @Composable
 fun CircularTimer(
@@ -35,7 +47,7 @@ fun CircularTimer(
             val sweepAngle = 360 * progress
             val stroke = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
 
-            // 背景グレーの円
+            // 背景グレー
             drawArc(
                 color = Color(0xFF3A3A3D),
                 startAngle = -90f,
@@ -44,7 +56,7 @@ fun CircularTimer(
                 style = stroke
             )
 
-            // 青の進行円
+            // 青い進行円
             drawArc(
                 color = Color(0xFF5E88FC),
                 startAngle = -90f,
@@ -66,20 +78,17 @@ fun CircularTimer(
 
 @Composable
 fun TimerScreen(viewModel: TimerViewModel = viewModel()) {
-    var secondsLeft by remember { mutableStateOf(viewModel.secondsLeft) }
-    var isRunning by remember { mutableStateOf(viewModel.isRunning) }
+    val context = LocalContext.current
+    val mediaPlayer = remember { MediaPlayer.create(context, R.raw.finish_sound) }
 
-    // タイマー更新ループ
-    LaunchedEffect(isRunning) {
-        while (isRunning && secondsLeft > 0) {
-            delay(1000)
-            secondsLeft--
+    val timerState by viewModel.state.collectAsState()
+
+    // 終了時サウンド
+    LaunchedEffect(timerState.secondsLeft) {
+        if (timerState.secondsLeft == 0) {
+            mediaPlayer.start()
         }
     }
-
-    val minutes = secondsLeft / 60
-    val seconds = secondsLeft % 60
-    val progress = secondsLeft.toFloat() / viewModel.initialSeconds.toFloat()
 
     Box(
         modifier = Modifier
@@ -87,28 +96,24 @@ fun TimerScreen(viewModel: TimerViewModel = viewModel()) {
             .background(Color(0xFF0D0D14)),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             CircularTimer(
-                remainingTime = "%02d:%02d".format(minutes, seconds),
-                progress = progress
+                remainingTime = "%02d:%02d".format(timerState.minutes, timerState.seconds),
+                progress = timerState.progress
             )
 
             Spacer(Modifier.height(24.dp))
 
             Row {
-                Button(onClick = { isRunning = !isRunning }) {
-                    Text(if (isRunning) "Pause" else "Start")
+                Button(onClick = {
+                    if (timerState.isRunning) viewModel.pause() else viewModel.start()
+                }) {
+                    Text(if (timerState.isRunning) "Pause" else "Start")
                 }
 
                 Spacer(Modifier.width(12.dp))
 
-                Button(onClick = {
-                    secondsLeft = viewModel.initialSeconds
-                    isRunning = false
-                }) {
+                Button(onClick = { viewModel.reset() }) {
                     Text("Reset")
                 }
             }
