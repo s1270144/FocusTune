@@ -52,7 +52,7 @@ fun CircularTimer(
     Box(
         modifier = modifier
             .size(size)
-            .clickable(onClick = onClick), // 🟢 円内タップで設定
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.size(size)) {
@@ -89,7 +89,10 @@ fun CircularTimer(
 }
 
 @Composable
-fun TimerScreen(viewModel: TimerViewModel = viewModel()) {
+fun TimerScreen(
+    viewModel: TimerViewModel = viewModel(),
+    onNavigateToMusicSelect: () -> Unit = {} // ← 🟢 追加：ナビゲーションコールバック
+) {
     val context = LocalContext.current
     val mediaPlayer = remember { MediaPlayer.create(context, R.raw.finish_sound) }
 
@@ -116,6 +119,8 @@ fun TimerScreen(viewModel: TimerViewModel = viewModel()) {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+            // 🕓 円形タイマー
             CircularTimer(
                 remainingTime = "%02d:%02d".format(timerState.minutes, timerState.seconds),
                 progress = timerState.progress,
@@ -124,6 +129,7 @@ fun TimerScreen(viewModel: TimerViewModel = viewModel()) {
 
             Spacer(Modifier.height(24.dp))
 
+            // ▶️ ボタン群
             Row {
                 Button(onClick = {
                     if (timerState.isRunning) viewModel.pause() else viewModel.start()
@@ -136,6 +142,23 @@ fun TimerScreen(viewModel: TimerViewModel = viewModel()) {
                 Button(onClick = { viewModel.reset() }) {
                     Text("Reset")
                 }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // 🎵 音楽選択ボタン（画面遷移）
+            Button(onClick = { onNavigateToMusicSelect() }) {
+                Text("🎵 音楽を選択")
+            }
+
+            // 選択中の音楽名を表示（仮）
+            if (viewModel.selectedMusic.value.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "選択中: ${viewModel.selectedMusic.value}",
+                    color = Color.White,
+                    fontSize = 16.sp
+                )
             }
         }
     }
