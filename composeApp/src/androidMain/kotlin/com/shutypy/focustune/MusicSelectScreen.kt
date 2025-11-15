@@ -31,9 +31,9 @@ fun MusicSelectScreen(
 ) {
     val context = LocalContext.current
     val musicList: List<Pair<String, Int>> = listOf(
-        "Focus Beats" to R.raw.finish_sound,
-        "Ocean Wave" to R.raw.finish_sound,
-        "Rain Sound" to R.raw.finish_sound
+        "Focus Beats" to R.raw.train,
+        "Ocean Wave" to R.raw.train,
+        "Rain Sound" to R.raw.train
     )
 
     var currentPlayer by remember { mutableStateOf<MediaPlayer?>(null) }

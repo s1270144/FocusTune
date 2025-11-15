@@ -1,6 +1,5 @@
 package com.shutypy.focustune
 
-import android.media.MediaPlayer
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,7 +20,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,13 +30,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun CircularTimer(
@@ -59,7 +55,6 @@ fun CircularTimer(
             val sweepAngle = 360 * progress
             val stroke = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
 
-            // 背景グレー
             drawArc(
                 color = Color(0xFF3A3A3D),
                 startAngle = -90f,
@@ -68,7 +63,6 @@ fun CircularTimer(
                 style = stroke
             )
 
-            // 青い進行円
             drawArc(
                 color = Color(0xFF5E88FC),
                 startAngle = -90f,
@@ -90,27 +84,17 @@ fun CircularTimer(
 
 @Composable
 fun TimerScreen(
-    viewModel: TimerViewModel = viewModel(),
-    onNavigateToMusicSelect: () -> Unit = {} // ← 🟢 追加：ナビゲーションコールバック
+    viewModel: TimerViewModel,
+    onNavigateToMusicSelect: () -> Unit = {}
 ) {
-    val context = LocalContext.current
-    val mediaPlayer = remember { MediaPlayer.create(context, R.raw.finish_sound) }
-
     val timerState by viewModel.state.collectAsState()
 
     var showDialog by remember { mutableStateOf(false) }
     var selectedMinutes by remember { mutableStateOf(25) }
 
     // 入力モード用
-    var isEditingText by remember { mutableStateOf(false) }
-    var inputText by remember { mutableStateOf("") }
-
-    // 終了時サウンド
-    LaunchedEffect(timerState.secondsLeft) {
-        if (timerState.secondsLeft == 0) {
-            mediaPlayer.start()
-        }
-    }
+    val isEditingText = remember { mutableStateOf(false) }
+    val inputText = remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier
@@ -146,16 +130,16 @@ fun TimerScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // 🎵 音楽選択ボタン（画面遷移）
+            // 🎵 音楽選択ボタン
             Button(onClick = { onNavigateToMusicSelect() }) {
                 Text("🎵 音楽を選択")
             }
 
-            // 選択中の音楽名を表示（仮）
-            if (viewModel.selectedMusic.value.isNotEmpty()) {
+            // 選択中の音楽名
+            if (viewModel.selectedMusic.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "選択中: ${viewModel.selectedMusic.value}",
+                    text = "選択中: ${viewModel.selectedMusic}",
                     color = Color.White,
                     fontSize = 16.sp
                 )
@@ -173,8 +157,7 @@ fun TimerScreen(
                     Text("分数を選んでください（5〜60分）")
                     Spacer(Modifier.height(8.dp))
 
-                    // 🟢 スライダー
-                    if (!isEditingText) {
+                    if (!isEditingText.value) {
                         Slider(
                             value = selectedMinutes.toFloat(),
                             onValueChange = { selectedMinutes = it.toInt() },
@@ -185,11 +168,10 @@ fun TimerScreen(
 
                     Spacer(Modifier.height(8.dp))
 
-                    // 🟢 数値表示 or 入力欄
-                    if (isEditingText) {
+                    if (isEditingText.value) {
                         OutlinedTextField(
-                            value = inputText,
-                            onValueChange = { inputText = it.filter { c -> c.isDigit() } },
+                            value = inputText.value,
+                            onValueChange = { inputText.value = it.filter { c -> c.isDigit() } },
                             singleLine = true,
                             label = { Text("分を入力") },
                             textStyle = LocalTextStyle.current.copy(
@@ -206,8 +188,8 @@ fun TimerScreen(
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier
                                 .clickable {
-                                    isEditingText = true
-                                    inputText = selectedMinutes.toString()
+                                    isEditingText.value = true
+                                    inputText.value = selectedMinutes.toString()
                                 }
                                 .padding(4.dp)
                         )
@@ -216,24 +198,19 @@ fun TimerScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    val minutes = when {
-                        isEditingText -> inputText.toIntOrNull()?.coerceIn(5, 60) ?: selectedMinutes
-                        else -> selectedMinutes
-                    }
+                    val minutes = if (isEditingText.value) {
+                        inputText.value.toIntOrNull()?.coerceIn(5, 60) ?: selectedMinutes
+                    } else selectedMinutes
                     viewModel.setTimer(minutes)
                     showDialog = false
-                    isEditingText = false
-                }) {
-                    Text("OK")
-                }
+                    isEditingText.value = false
+                }) { Text("OK") }
             },
             dismissButton = {
                 TextButton(onClick = {
                     showDialog = false
-                    isEditingText = false
-                }) {
-                    Text("キャンセル")
-                }
+                    isEditingText.value = false
+                }) { Text("キャンセル") }
             }
         )
     }
