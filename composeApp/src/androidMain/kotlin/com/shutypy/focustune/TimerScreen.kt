@@ -136,13 +136,15 @@ fun TimerScreen(
             }
 
             // 選択中の音楽名
-            if (viewModel.selectedMusic.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "選択中: ${viewModel.selectedMusic}",
-                    color = Color.White,
-                    fontSize = 16.sp
-                )
+            viewModel.selectedMusic?.let { music ->
+                if (music.title.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "選択中: ${music.title}",
+                        color = Color.White,
+                        fontSize = 16.sp
+                    )
+                }
             }
         }
     }

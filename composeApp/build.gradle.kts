@@ -29,6 +29,7 @@ kotlin {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation("androidx.navigation:navigation-compose:2.7.3")
+            implementation("com.google.code.gson:gson:2.10.1")
         }
         commonMain.dependencies {
             implementation(compose.runtime)

@@ -6,28 +6,25 @@ import android.media.MediaPlayer
 actual class MusicController(private val context: Context) {
 
     private var mediaPlayer: MediaPlayer? = null
-    private var selectedResId: Int? = null
-    private var selectedName: String = ""
+    var selectedMusic: Music? = null
 
-    actual fun setMusic(name: String) {
-        val resId = when (name) {
-            "Focus Beats" -> R.raw.train
-            "Ocean Wave" -> R.raw.train
-            "Rain Sound" -> R.raw.train
-            else -> null
-        }
-        selectedResId = resId
-        selectedName = name
+    actual fun setMusic(music: Music) {
+        stopMusic()
+        selectedMusic = music
     }
 
     actual fun startMusic() {
+        val music = selectedMusic ?: return
         stopMusic()
-        val resId = selectedResId ?: return
 
-        mediaPlayer = MediaPlayer.create(context, resId).apply {
-            isLooping = true
-            start()
-        }
+        val player = MediaPlayer()
+        val afd = context.assets.openFd("music/${music.file}")
+        player.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+        player.isLooping = true
+        player.prepare()
+        player.start()
+
+        mediaPlayer = player
     }
 
     actual fun pauseMusic() {
@@ -40,6 +37,6 @@ actual class MusicController(private val context: Context) {
         mediaPlayer = null
     }
 
-    val currentMusicName: String
-        get() = selectedName
+    actual val currentMusicName: String
+        get() = selectedMusic?.title ?: ""
 }

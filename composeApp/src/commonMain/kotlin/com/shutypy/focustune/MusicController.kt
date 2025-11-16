@@ -5,8 +5,10 @@ package com.shutypy.focustune
  * 実装はプラットフォームごと（Android/iOS）で異なるため expect 宣言のみ。
  */
 expect class MusicController {
-    fun setMusic(name: String)
+    fun setMusic(music: Music)
     fun startMusic()
     fun pauseMusic()
     fun stopMusic()
+
+    val currentMusicName: String
 }

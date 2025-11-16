@@ -7,7 +7,7 @@ expect class TimerViewModel(
 ) {
     val state: StateFlow<TimerState>
 
-    var selectedMusic: String
+    var selectedMusic: Music?
 
     fun start()
 

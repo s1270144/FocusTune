@@ -19,10 +19,10 @@ actual class TimerViewModel actual constructor(
 
     private var timerJob: Job? = null
 
-    actual var selectedMusic: String
-        get() = musicController.currentMusicName
+    actual var selectedMusic: Music?
+        get() = musicController.selectedMusic
         set(value) {
-            musicController.setMusic(value)
+            value?.let { musicController.setMusic(it) }
         }
 
     actual fun start() {
