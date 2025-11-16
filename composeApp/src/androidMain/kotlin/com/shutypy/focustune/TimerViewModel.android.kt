@@ -2,6 +2,7 @@ package com.shutypy.focustune
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,19 +17,22 @@ actual class TimerViewModel actual constructor(
     )
     actual val state = _state.asStateFlow()
 
+    private var timerJob: Job? = null
+
     actual var selectedMusic: String
         get() = musicController.currentMusicName
         set(value) {
             musicController.setMusic(value)
         }
-    
+
     actual fun start() {
         if (_state.value.isRunning) return
         _state.value = _state.value.copy(isRunning = true)
 
         musicController.startMusic()
 
-        viewModelScope.launch {
+        timerJob?.cancel()  // ← 既存のループを止める
+        timerJob = viewModelScope.launch {
             while (_state.value.isRunning && _state.value.secondsLeft > 0) {
                 delay(1000)
                 _state.value = _state.value.copy(secondsLeft = _state.value.secondsLeft - 1)
@@ -43,10 +47,12 @@ actual class TimerViewModel actual constructor(
 
     actual fun pause() {
         _state.value = _state.value.copy(isRunning = false)
+        timerJob?.cancel()     // ← ループ停止
         musicController.pauseMusic()
     }
 
     actual fun reset() {
+        timerJob?.cancel()     // ← ループ停止
         _state.value = _state.value.copy(
             secondsLeft = _state.value.totalSeconds,
             isRunning = false
@@ -56,6 +62,7 @@ actual class TimerViewModel actual constructor(
 
     actual fun setTimer(minutes: Int) {
         val total = minutes * 60
+        timerJob?.cancel()     // ← 新しい時間にしたらループ停止
         _state.value = TimerState(total, false, total)
     }
 }
